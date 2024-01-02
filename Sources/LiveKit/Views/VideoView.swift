@@ -26,7 +26,7 @@ internal protocol Mirrorable {
 internal typealias NativeRendererView = NativeViewType & RTCVideoRenderer & Mirrorable
 
 @objc
-public class VideoView: NativeView, Loggable {
+open class VideoView: NativeView, Loggable {
 
     // MARK: - MulticastDelegate
 
@@ -362,7 +362,7 @@ public class VideoView: NativeView, Loggable {
         }
     }
 
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 

@@ -31,13 +31,13 @@ public typealias NativeViewType = NSView
 /// A simple abstraction of a View that is native to the platform.
 /// When built for iOS this will be a UIView.
 /// When built for macOS this will be a NSView.
-public class NativeView: NativeViewType {
+open class NativeView: NativeViewType {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
 
-    required init?(coder: NSCoder) {
+    required public init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
