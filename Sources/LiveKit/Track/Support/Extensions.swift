@@ -115,6 +115,11 @@ extension RPSystemBroadcastPickerView {
             pickerView.preferredExtension = preferredExtension
             pickerView.showsMicrophoneButton = showsMicrophoneButton
             
+            let selector = NSSelectorFromString("buttonPressed:")
+            if pickerView.responds(to: selector) {
+                pickerView.perform(selector, with: nil)
+            }
+            
             fulfill(pickerView)
         }
     }
@@ -124,15 +129,20 @@ extension RPSystemBroadcastPickerView {
         return Promise<Void>(on: DispatchQueue.main) { fulfill, error in
             for subview in self.subviews {
                 if let button = subview as? UIButton {
-                    fulfill(Void())
+                    button.addAction {
+                        fulfill(Void())
+                    }
                 }
             }
         }
-        
-        //        let selector = NSSelectorFromString("buttonPressed:")
-        //        if view.responds(to: selector) {
-        //            view.perform(selector, with: nil)
-        //        }
     }
 }
 #endif
+
+import UIKit
+
+extension UIControl {
+  func addAction(for controlEvents: UIControl.Event = .touchUpInside, _ closure: @escaping () -> Void) {
+    addAction(UIAction { (action: UIAction) in closure() }, for: controlEvents)
+  }
+}

@@ -551,12 +551,13 @@ extension LocalParticipant {
                             return pickerView.onScreenShareButtonTapped()
                         }
                         .then { [weak self] _ -> Promise<LocalTrackPublication?> in
+                            guard let self else { return Promise(nil) }
+
                             let localTrack = LocalVideoTrack.createBroadcastScreenCapturerTrack(options: options)
                             
-                            return self!.publishVideoTrack(
-                                track: localTrack,
-                                publishOptions: publishOptions as? VideoPublishOptions
-                            ).then(on: self!.queue) { $0 }
+                            return self
+                                .publishVideoTrack(track: localTrack, publishOptions: publishOptions as? VideoPublishOptions)
+                                .then(on: self.queue) { $0 }
                         }
                 } else {
                     localTrack = LocalVideoTrack.createInAppScreenShareTrack(options: options)
@@ -577,12 +578,4 @@ extension LocalParticipant {
 
         return Promise(nil)
     }
-}
-
-import UIKit
-
-extension UIControl {
-  func addAction(for controlEvents: UIControl.Event = .touchUpInside, _ closure: @escaping () -> Void) {
-    addAction(UIAction { (action: UIAction) in closure() }, for: controlEvents)
-  }
 }
