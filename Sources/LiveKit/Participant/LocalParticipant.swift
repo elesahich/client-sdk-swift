@@ -551,7 +551,7 @@ extension LocalParticipant {
                             return pickerView.onScreenShareButtonTapped()
                         }
                         .then { [weak self] _ -> Promise<LocalTrackPublication?> in
-                            let localTrack = LocalVideoTrack.createInAppScreenShareTrack(options: options)
+                            let localTrack = LocalVideoTrack.createBroadcastScreenCapturerTrack(options: options)
                             
                             return self!.publishVideoTrack(
                                 track: localTrack,
