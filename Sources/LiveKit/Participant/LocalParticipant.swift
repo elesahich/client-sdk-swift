@@ -33,6 +33,9 @@ public class LocalParticipant: Participant {
 
     private var allParticipantsAllowed: Bool = true
     private var trackPermissions: [ParticipantTrackPermission] = []
+    
+    // Temporary
+    private var broadcastPickerView: RPSystemBroadcastPickerView?
 
     internal convenience init(from info: Livekit_ParticipantInfo,
                               room: Room) {
@@ -535,16 +538,26 @@ extension LocalParticipant {
                 let localTrack = LocalAudioTrack.createTrack(options: (captureOptions as? AudioCaptureOptions) ?? room._state.options.defaultAudioCaptureOptions)
                 return publishAudioTrack(track: localTrack, publishOptions: publishOptions as? AudioPublishOptions).then(on: queue) { $0 }
             } else if source == .screenShareVideo {
-                #if os(iOS)
+#if os(iOS)
                 var localTrack: LocalVideoTrack?
                 let options = (captureOptions as? ScreenShareCaptureOptions) ?? room._state.options.defaultScreenShareCaptureOptions
                 if options.useBroadcastExtension {
-                    Task { @MainActor in
-                        let screenShareExtensionId = Bundle.main.infoDictionary?[BroadcastScreenCapturer.kRTCScreenSharingExtension] as? String
-                        RPSystemBroadcastPickerView.show(for: screenShareExtensionId,
-                                                         showsMicrophoneButton: false)
-                    }
-                    localTrack = LocalVideoTrack.createBroadcastScreenCapturerTrack(options: options)
+                    let screenShareExtensionId = Bundle.main.infoDictionary?[BroadcastScreenCapturer.kRTCScreenSharingExtension] as? String
+                    
+                    return RPSystemBroadcastPickerView
+                        .createPickerView(for: screenShareExtensionId, showsMicrophoneButton: false)
+                        .then { [weak self] pickerView in
+                            self?.broadcastPickerView = pickerView
+                            return pickerView.onScreenShareButtonTapped()
+                        }
+                        .then { [weak self] _ -> Promise<LocalTrackPublication?> in
+                            let localTrack = LocalVideoTrack.createInAppScreenShareTrack(options: options)
+                            
+                            return self!.publishVideoTrack(
+                                track: localTrack,
+                                publishOptions: publishOptions as? VideoPublishOptions
+                            ).then(on: self!.queue) { $0 }
+                        }
                 } else {
                     localTrack = LocalVideoTrack.createInAppScreenShareTrack(options: options)
                 }
@@ -552,16 +565,24 @@ extension LocalParticipant {
                 if let localTrack = localTrack {
                     return publishVideoTrack(track: localTrack, publishOptions: publishOptions as? VideoPublishOptions).then(on: queue) { $0 }
                 }
-                #elseif os(macOS)
+#elseif os(macOS)
                 return MacOSScreenCapturer.mainDisplaySource().then(on: queue) { mainDisplay in
                     let track = LocalVideoTrack.createMacOSScreenShareTrack(source: mainDisplay,
                                                                             options: (captureOptions as? ScreenShareCaptureOptions) ?? self.room._state.options.defaultScreenShareCaptureOptions)
                     return self.publishVideoTrack(track: track, publishOptions: publishOptions as? VideoPublishOptions)
                 }.then(on: queue) { $0 }
-                #endif
+#endif
             }
         }
 
         return Promise(nil)
     }
+}
+
+import UIKit
+
+extension UIControl {
+  func addAction(for controlEvents: UIControl.Event = .touchUpInside, _ closure: @escaping () -> Void) {
+    addAction(UIAction { (action: UIAction) in closure() }, for: controlEvents)
+  }
 }

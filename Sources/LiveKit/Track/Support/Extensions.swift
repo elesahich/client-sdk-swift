@@ -98,23 +98,41 @@ extension CGImage {
     }
 }
 
+import Promises
+
 #if os(iOS)
 @available(iOS 12, *)
 extension RPSystemBroadcastPickerView {
-
-    /// Convenience function to show broadcast extension picker
-    public static func show(for preferredExtension: String? = nil,
-                            showsMicrophoneButton: Bool = true) {
-        // Must be called on main thread
-        assert(Thread.current.isMainThread, "must be called on main thread")
-
-        let view = RPSystemBroadcastPickerView()
-        view.preferredExtension = preferredExtension
-        view.showsMicrophoneButton = showsMicrophoneButton
-        let selector = NSSelectorFromString("buttonPressed:")
-        if view.responds(to: selector) {
-            view.perform(selector, with: nil)
+    public static func createPickerView(
+        for preferredExtension: String?,
+        showsMicrophoneButton: Bool
+    ) -> Promise<RPSystemBroadcastPickerView> {
+        return Promise<RPSystemBroadcastPickerView>(on: DispatchQueue.main) { fulfill, error in
+            assert(Thread.current.isMainThread, "must be called on main thread")
+            
+            let pickerView = RPSystemBroadcastPickerView()
+            
+            pickerView.preferredExtension = preferredExtension
+            pickerView.showsMicrophoneButton = showsMicrophoneButton
+            
+            fulfill(pickerView)
         }
+    }
+    
+    public func onScreenShareButtonTapped() -> Promise<Void> {
+        // Must be called on main thread
+        return Promise<Void>(on: DispatchQueue.main) { fulfill, error in
+            for subview in self.subviews {
+                if let button = subview as? UIButton {
+                    fulfill(Void())
+                }
+            }
+        }
+        
+        //        let selector = NSSelectorFromString("buttonPressed:")
+        //        if view.responds(to: selector) {
+        //            view.perform(selector, with: nil)
+        //        }
     }
 }
 #endif
